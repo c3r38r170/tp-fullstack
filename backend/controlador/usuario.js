@@ -155,12 +155,17 @@ function cambiarHabilitado(req, res) {
 function ingresar(req, res) {
     usuarioDao.findByUsername(req.body.usuario)
         .then((usuarios) => {
-            for(let usuario of usuarios){
-                if(bcrypt.compareSync(req.body.contrasenia, usuario.contrasenia)){
-                    req.session.usuarioID=usuario.ID;
-                    res.send(usuario);
-                    return; // break;
+            if(usuarios.length==0){
+                res.status(404).send('Nombre de usuario incorrecto.');
+            }else{
+                for(let usuario of usuarios){
+                    if(bcrypt.compareSync(req.body.contrasenia, usuario.contrasenia)){
+                        req.session.usuarioID=usuario.ID;
+                        res.send(usuario);
+                        return; // ? break;
+                    }
                 }
+                res.status(401).send('Contraseña incorrecta.');
             }
         })
         .catch((error) => {

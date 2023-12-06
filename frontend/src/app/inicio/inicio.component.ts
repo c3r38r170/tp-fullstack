@@ -4,6 +4,7 @@ import { Permiso, } from '../servicios/permiso.service';
 import {Router} from "@angular/router";
 import { HttpErrorResponse } from '@angular/common/http';
 import { Observer } from 'rxjs';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-inicio',
@@ -16,7 +17,8 @@ export class InicioComponent implements OnInit {
 
   constructor(
     private usuarioService: UsuarioService,
-    private router: Router
+    private router: Router,
+    private toastr: ToastrService
   ) { }
 
   ngOnInit(): void {}
@@ -33,8 +35,7 @@ export class InicioComponent implements OnInit {
             this.router.navigate(['/panel'])
           }
           ,error:(err: HttpErrorResponse) => {
-            // TODO Toasty, del proyecto de Java
-            console.error('An error occurred:', err.error);
+            this.toastr.error(err.error);
           }
         }
       );
