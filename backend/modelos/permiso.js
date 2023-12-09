@@ -27,6 +27,18 @@ const opcionesUsuarioPermiso={
     ,constraints:false
 };
 
+// TODO Refactor: enumeración de permisos para toda la aplicación
+/* 
+const PermisosIDs={
+    GENERAR_TOKENS:1
+    ,ADMINISTRAR_USUARIOS:2
+    ,ENVIAR_TOKENS:3
+}
+// Y, admemás, que se tomen las IDs de la base de datos?
+
+// Ver cómo se debería hacer este chequeo, si por IDs o por objetos...
+*/
+
 Permiso.sync()
     .then(()=>{
         Permiso.findAll()
@@ -55,4 +67,4 @@ Permiso.sync()
         UsuarioPermiso.sync();
     });
 
-module.exports = {Permiso};
+module.exports = {Permiso,/* PermisosIDs */};

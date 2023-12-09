@@ -29,7 +29,7 @@ function addUsuario(req, res) {
             res.send(data);
         })
         .catch((error) => {
-            console.log(error);
+            res.status(500).send(error.message);
         });
 }
 
@@ -41,14 +41,15 @@ function findUsuarioById(req, res) {
             else res.status(404).send();
         })
         .catch((error) => {
-            res.status(500).send(error);
+            res.status(500).send(error.message);
         });
 }
 
 function deleteById(req, res) {
     let eliminarUsuario=()=>{
-        usuarioDao.deleteById(req.params.id).
-        then((data) => {
+        usuarioDao.deleteById(req.params.id)
+        .then((data) => {
+            // TODO Refactor: wtf xq json
             res.status(200).json({
                 message: "Usuario deleted successfully",
                 usuario: data
@@ -61,27 +62,27 @@ function deleteById(req, res) {
 
     if(req.session.usuarioID==req.params.id){
         eliminarUsuario();
-    }else usuarioDao.findById(req.session.usuarioID)
-		.then(usuario=>{
-            // TODO Refactor: Enum para los permisos
-            if(!usuario.permisos.some((per)=>per.ID==2)){
-                res.status(403).send();
-            }else{
-                eliminarUsuario();
-            }
-        })
+    }else{
+        // TODO Refactor: Enum para los permisos
+        if(!req.session.usuario.permisos.some((per)=>per.ID==2)){ // * 2 es Administrar usuarios
+            res.status(403).send('No tiene los permisos necesarios.');
+        }else{
+            eliminarUsuario();
+        }
+    }
 }
 
 function updateUsuario(req, res) {
     usuarioDao.updateUsuario(req.body, req.params.id).
         then((data) => {
+            // TODO Refactor: wtf xq json
             res.status(200).json({
                 message: "Usuario updated successfully",
                 usuario: data
             })
         })
         .catch((error) => {
-            console.log(error);
+            res.status(500).send(error.message);
         });
 }
 
@@ -93,7 +94,7 @@ function findUsuarios(req, res) {
             res.send(data);
         })
         .catch((error) => {
-            console.log(error);
+            res.status(500).send(error.message);
         });
 }
 
@@ -110,46 +111,47 @@ function findUsuariosFuzzilyByName(req, res) {
             res.send(data);
         })
         .catch((error) => {
-            console.log(error);
+            res.status(500).send(error.message);
         });
 }
 
 function cantidadDeUsuarios(req, res) {
-	usuarioDao.findById(req.session.usuarioID)
-		.then(usuario=>{
-            // TODO Refactor: Enum para los permisos
-            if(!usuario.permisos.some((per)=>per.ID==2)){
-                res.status(403).send();
-            }else{
-                // ! El segundo parámetro es la persona a OMITIR; o sea, el usuario actual.
-                usuarioDao.buscarPorNombre(req.params.consulta,req.session.usuarioID)
-                    .then((data) => {
-                        res.send(Math.ceil(data.length/usuarioDao.cantidadPorPagina).toString());
-                    })
-                    .catch((error) => {
-                        console.log(error);
-                    });
-            }
+    let usuario=req.session.usuario;
+
+    // TODO Refactor: Enum para los permisos (ver que en modelos/permiso.js tambien se propuso)
+    if(!usuario.permisos.some((per)=>per.ID==2)){ //* Administrar Usuarios
+        res.status(403).send();
+        return;
+    }
+
+    // ! El segundo parámetro es la persona a OMITIR; o sea, el usuario actual.
+    usuarioDao.buscarPorNombre(req.params.consulta,req.session.usuarioID)
+        .then((data) => {
+            res.send(Math.ceil(data.length/usuarioDao.cantidadPorPagina).toString());
         })
+        .catch((error) => {
+            res.status(500).send(error.message);
+        });
 }
 
 // TODO Refactor: Unir con actualizarDatos
 function cambiarHabilitado(req, res) {
-	usuarioDao.findById(req.session.usuarioID)
-    .then(usuario=>{
-        // TODO Refactor: Enum para los permisos
-        if(!usuario.permisos.some((per)=>per.ID==2)){
-            res.status(403).send();
-        }else{
-            usuarioDao.cambiarHabilitado(req.params.id,req.body.valor)
-                .then((data) => {
-                    res.send(data);
-                })
-                .catch((error) => {
-                    console.log(error);
-                });
-            }
+    let usuario=req.session.usuario;
+    
+    // TODO Refactor: Enum para los permisos
+    // TODO Refactor: Algún control centralizado de permisos? Tipo tengo(permisoID)
+    if(!usuario.permisos.some((per)=>per.ID==2)){ // * Administrar usuarios
+        res.status(403).send();
+        return;
+    }
+
+    usuarioDao.cambiarHabilitado(req.params.id,req.body.valor)
+        .then((data) => {
+            res.send(data);
         })
+        .catch((error) => {
+            res.status(500).send(error.message);
+        });
 }
 
 function ingresar(req, res) {
@@ -169,7 +171,7 @@ function ingresar(req, res) {
             }
         })
         .catch((error) => {
-            res.status(500).send(error);
+            res.status(500).send(error.message);
         });
 }
 
@@ -178,17 +180,17 @@ function salir(req, res) {
     res.status(200).send();
 }
 
+// TODO Refactor: En invitasr, eliminarInvitacion, cancelarInvitacion y rechazarInvitacion (y aceptarAmigo y eliminarAmigo (creo)) se usan las IDs, pero siempre tenemos uno de los 2 usuarios. Ver cómo evitar usar 2 veces findByIk
+
 function invitar(req,res){
     usuarioDao.invitar(req.session.usuarioID,req.params.id)
-        .then((usuario) => {
+        .then(() => {
             res.send();
         })
         .catch((error) => {
-            console.log(error);
-            res.status(500).send(error);
+            res.status(500).send(error.message);
         });
 }
-
 function eliminarInvitacion(req,res){
     // TODO DRY? (ala window[?'':''])
     return req.body.soyInvitador?
@@ -196,40 +198,33 @@ function eliminarInvitacion(req,res){
         :rechazarInvitacion(req,res);
     
 }
-
 function cancelarInvitacion(req,res){
     usuarioDao.eliminarInvitacion(req.session.usuarioID,req.params.id)
         .then(() => {
             res.send();
         })
         .catch((error) => {
-            console.log(error);
-            res.status(500).send(error);
+            res.status(500).send(error.message);
         });
 }
-
 function rechazarInvitacion(req,res){
     usuarioDao.eliminarInvitacion(req.params.id,req.session.usuarioID)
         .then(() => {
             res.send();
         })
         .catch((error) => {
-            console.log(error);
-            res.status(500).send(error);
+            res.status(500).send(error.message);
         });
 }
-
 function aceptarInvitacion(req,res){
     usuarioDao.aceptarInvitacion(req.session.usuarioID,req.params.id)
         .then((usuario) => {
             res.send(usuario);
         })
         .catch((error) => {
-            console.log(error);
-            res.status(500).send(error);
+            res.status(500).send(error.message);
         });
 }
-
 function eliminarAmigo(req,res){
     usuarioDao.eliminarAmigo(req.session.usuarioID,req.params.id)
         .then((usuario) => {
@@ -237,38 +232,37 @@ function eliminarAmigo(req,res){
             res.send(/* usuario */);
         })
         .catch((error) => {
-            console.log(error);
-            res.status(500).send(error);
+            res.status(500).send(error.message);
         });
 }
 
 function actualizarPermisos(req,res){
-	usuarioDao.findById(req.session.usuarioID)
-        .then(usuario=>{
-            // TODO Refactor: Enum para los permisos
-            if(!usuario.permisos.some((per)=>per.ID==2)){
-                res.status(403).send();
-            }else{
-                usuarioDao.actualizarPermisos(req.params.id,req.body.permisos)
-                    .then((data) => {
-                        res.send(data);
-                    })
-                    .catch((error) => {
-                        console.log(error);
-                    });
-            }
-        })
+    let usuario=req.session.usuario;
+    
+    // TODO Refactor: Enum para los permisos
+    if(!usuario.permisos.some((per)=>per.ID==2)){
+        res.status(403).send();
+        return;
+    }
+
+    usuarioDao.actualizarPermisos(req.params.id,req.body.permisos)
+    .then((data) => {
+        res.send(data);
+    })
+    .catch((error) => {
+        res.status(500).send(error.message);
+    });
 }
 
 function actualizarDatos(req,res){
     let editadoID=req.params.id;
     let dato=req.body.dato;
     let datosPosibles=[
-            'nombreCompleto'
-            // TODO Now: setter de contraseña, ver cómo se hace en la creación
-            ,'contrasenia'
-            ,'correo'
-        ]
+        'nombreCompleto'
+        // TODO Now: setter de contraseña, ver cómo se hace en la creación
+        ,'contrasenia'
+        ,'correo'
+    ]
     
         // TODO Refactor: No me acuerdo como funciona el hoisting acá, pero estaría bueno que semánticamente esta función vaya después de los chequeos de abajo. Lo mismo más arriba con los permisos o de donde sea que saqué parte del algoritmo.
     let realizarActualizacion=()=>{
@@ -280,7 +274,7 @@ function actualizarDatos(req,res){
                 // TODO Refactor: Enum para los permisos
                 usuario[req.body.dato]=req.body.valor;
                 usuario.save()
-                    .then(r=>{
+                    .then(()=>{
                         res.send();
                     })
             })
@@ -289,17 +283,15 @@ function actualizarDatos(req,res){
     // TODO Refactor: quizá hacer algo con las rutas que se puedan si se tienen permisos
     if(req.session.usuarioID==editadoID){
         realizarActualizacion();
-    }else usuarioDao.findById(req.session.usuarioID)
-		.then(usuario=>{
-            // TODO Refactor: Enum para los permisos
-            if(!usuario.permisos.some((per)=>per.ID==2)){
-                res.status(403).send();
-            }else{
-                // TODO Refactor: (duplicado) pasar habilitado para acá, de su propia función
-                datosPosibles=datosPosibles.concat('DNI','nombreUsuario','habilitado');
-                realizarActualizacion();
-            }
-        });
+    }else{
+        if(!req.session.usuario.permisos.some((per)=>per.ID==2)){
+            res.status(403).send();
+        }else{
+            // TODO Refactor: (duplicado) pasar habilitado para acá, de su propia función
+            datosPosibles=datosPosibles.concat('DNI','nombreUsuario','habilitado');
+            realizarActualizacion();
+        }
+    }
 }
 
 module.exports = usuarioController;

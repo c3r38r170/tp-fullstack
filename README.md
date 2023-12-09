@@ -56,4 +56,4 @@ Esto se entregaría en alguna mesa de Febrero.
 
 ## 3 - Entrega final
 
-En alguna mesa de Febrero. Hay que hacer un video sobre el sistema y todo. Ampliaremos.
+En alguna mesa. Hay que hacer un video sobre el sistema y todo. Ampliaremos.
