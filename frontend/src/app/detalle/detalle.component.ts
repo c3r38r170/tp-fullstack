@@ -3,6 +3,7 @@ import { UsuarioDetalladoService } from '../servicios/usuario-detallado.service'
 import { Usuario,UsuarioService as UsuariosService } from '../servicios/usuario.service';
 import { UsuarioActualService } from '../servicios/usuario-actual.service';
 import { ToastrService } from 'ngx-toastr';
+import { HttpErrorResponse } from '@angular/common/http';
 
 declare var particlesJS: any; 
 
@@ -80,36 +81,41 @@ export class DetalleComponent implements OnInit {
       ,dato
       ,valor
     )
-      .subscribe((result: any)=>{
-        let datoMensaje;
+      .subscribe({
+        next:(result: any)=>{
+          let datoMensaje;
 
-        switch(dato){
-        case 'nombreCompleto':
-          this.usuarioDetallado.nombreCompleto=valor;
-          datoMensaje='Nombre completo';
-          break;
-        case 'DNI':
-          this.usuarioDetallado.DNI=valor;
-          datoMensaje='DNI';
-          break;
-        case 'nombreUsuario':
-          this.usuarioDetallado.nombreUsuario=valor;
-          datoMensaje='Nombre de usuario';
-          break;
-        case 'correo':
-          this.usuarioDetallado.correo=valor;
-          datoMensaje='Correo';
-          break;
-        case 'habilitado':
-          this.usuarioDetallado.habilitado = valor=='1';
-          datoMensaje='Estado del usuario';
-          break;
+          switch(dato){
+          case 'nombreCompleto':
+            this.usuarioDetallado.nombreCompleto=valor;
+            datoMensaje='Nombre completo';
+            break;
+          case 'DNI':
+            this.usuarioDetallado.DNI=valor;
+            datoMensaje='DNI';
+            break;
+          case 'nombreUsuario':
+            this.usuarioDetallado.nombreUsuario=valor;
+            datoMensaje='Nombre de usuario';
+            break;
+          case 'correo':
+            this.usuarioDetallado.correo=valor;
+            datoMensaje='Correo';
+            break;
+          case 'habilitado':
+            this.usuarioDetallado.habilitado = valor=='1';
+            datoMensaje='Estado del usuario';
+            break;
+          }
+
+          form.dataset['sucio']='0';
+          form.dataset['enviando']='0';
+
+          this.toastr.success(`${datoMensaje} actualizado.`);
         }
-
-        form.dataset['sucio']='0';
-        form.dataset['enviando']='0';
-
-        this.toastr.success(`${datoMensaje} actualizado.`);
+        ,error:(err: HttpErrorResponse)=>{
+          this.toastr.error(err.error);
+        }
       });
       ;
   }  

@@ -6,6 +6,7 @@ import { Usuario, UsuarioService as UsuariosService,Amistad,EstadosAmistades } f
 import { TokensService } from '../servicios/tokens.service';
 import { UsuarioDetalladoService } from '../servicios/usuario-detallado.service';
 import { ToastrService } from 'ngx-toastr';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-panel',
@@ -93,7 +94,7 @@ export class PanelComponent implements OnInit {
               });
           }
         }
-        ,error:error=>{
+        ,error:()=>{
           this.router.navigate(['/'])
         }
       });
@@ -122,13 +123,18 @@ export class PanelComponent implements OnInit {
     if(consulta.length>3)
       this.usuariosService
         .buscarDifusamentePorNombre(consulta)
-        .subscribe((result: any)=>{
-          if(this.busquedaID==busquedaID){
-            // ! Ya vienen filtrados por habilitados.
-            this.usuariosEncontrados=result;
-            if(result.length==0){
-              this.puedeMostrarVacio=true;
+        .subscribe({
+          next:(result: any)=>{
+            if(this.busquedaID==busquedaID){
+              // ! Ya vienen filtrados por habilitados.
+              this.usuariosEncontrados=result;
+              if(result.length==0){
+                this.puedeMostrarVacio=true;
+              }
             }
+          }
+          ,error:(err: HttpErrorResponse) => {
+            this.toastr.error(err.error);
           }
         });
     else{
@@ -155,8 +161,8 @@ export class PanelComponent implements OnInit {
           
           this.usuariosEncontrados.splice(indice, 1);
         }
-        ,error:error=>{
-          this.console.log(error);
+        ,error:(err: HttpErrorResponse)=>{
+          this.toastr.error(err.error);
         }
         ,complete:()=>{
           (document.getElementById('resultados') as HTMLFieldSetElement).disabled=false;
@@ -182,8 +188,8 @@ export class PanelComponent implements OnInit {
             this.console.log('Error al cancelar invitación. ¿No hay amigos?')
           }
         }
-        ,error:error=>{
-          this.console.log(error);
+        ,error:(err: HttpErrorResponse)=>{
+          this.toastr.error(err.error);
         }
       })
   }
@@ -208,8 +214,8 @@ export class PanelComponent implements OnInit {
 
             return;
           }
-          ,error:error=>{
-            this.console.log(error);
+          ,error:(err: HttpErrorResponse)=>{
+            this.toastr.error(err.error);
           }
         });
     else this.usuariosService
@@ -222,8 +228,8 @@ export class PanelComponent implements OnInit {
             this.usuarioActual.amigos.splice(indice, 1);
           }else this.console.log('Error al eliminar invitación. ¿No hay amigos?');
         }
-        ,error:error=>{
-          this.console.log(error);
+        ,error:(err: HttpErrorResponse)=>{
+          this.toastr.error(err.error);
         }
       });
   }
@@ -243,8 +249,8 @@ export class PanelComponent implements OnInit {
             this.usuarioActual.amigos.splice(indice, 1);
           }else this.console.log('Error al eliminar un amigo. ¿No hay array amigos?');
         }
-        ,error:error=>{
-          this.console.log(error);
+        ,error:(err: HttpErrorResponse)=>{
+          this.toastr.error(err.error);
         }
       });
   }
@@ -262,8 +268,8 @@ export class PanelComponent implements OnInit {
           this.tokensCirculando+=cantidad;
           this.usuarioActual.tokens+=cantidad;
         }
-        ,error:error=>{
-          this.console.log(error);
+        ,error:(err: HttpErrorResponse)=>{
+          this.toastr.error(err.error);
         }
       });
   }
@@ -277,9 +283,13 @@ export class PanelComponent implements OnInit {
     this.usuariosService
       .salir()
       .subscribe({
-        next:()=>{
+        /* complete (finally) */next:()=>{
           this.router.navigate(['/'])
         }
+        /* TODO Feature: Ver los errores posibles, qué hacer en cada caso...
+        ,error:(err: HttpErrorResponse)=>{
+          this.toastr.error(err.error);
+        } */
       })
   }
 
@@ -301,8 +311,8 @@ export class PanelComponent implements OnInit {
         this.toastr.success('¡Se han enviado los tokens exitosamente!');
         this.usuarioActual.tokens-=cantidad;
       }
-      ,error:error=>{
-        this.console.log(error);
+      ,error:(err: HttpErrorResponse)=>{
+        this.toastr.error(err.error);
       }
       ,complete:()=>{
         boton.disabled=false;
@@ -321,8 +331,13 @@ export class PanelComponent implements OnInit {
     // TODO Feature: que funcione bien  ??? anda bien qué decís
     this.usuariosService
       .create(u)
-      .subscribe((result:any)=>{
-        this.toastr.success(`El usuario se creó exitosamente.`);
+      .subscribe({
+        next:(result:any)=>{
+          this.toastr.success(`El usuario se creó exitosamente.`);
+        }
+        ,error:(err: HttpErrorResponse)=>{
+          this.toastr.error(err.error);
+        }
       });
   }
 
@@ -344,8 +359,8 @@ export class PanelComponent implements OnInit {
           // TODO UX: Considerar si hace falta el cartel de éxito en ciertos casos, como este; que tienen una respuesta muy clara.
           this.toastr.success(`Permisos del usuario ${this.usuariosPaginaActual.find(usu=>usu.ID==usuarioID)?.nombreCompleto} actualizados.`);
         }
-        ,error:error=>{
-          this.console.log(error);
+        ,error:(err: HttpErrorResponse)=>{
+          this.toastr.error(err.error);
         }
       })
 
@@ -362,9 +377,14 @@ export class PanelComponent implements OnInit {
     let nuevaID:Number=this.nuevaIDPeticion();
     // TODO Refactor: hacer alguna reacción o DRY con el primero.
     this.usuariosService.getCantidadDePaginas(this.filtroDePaginacion)
-      .subscribe((cantidadDePaginas: any)=>{
-        if(this.IDPeticion==nuevaID) {
-          this.cantidadPaginas=cantidadDePaginas;
+      .subscribe({
+        next:(cantidadDePaginas: any)=>{
+          if(this.IDPeticion==nuevaID) {
+            this.cantidadPaginas=cantidadDePaginas;
+          }
+        }
+        ,error:(err: HttpErrorResponse)=>{
+          this.toastr.error(err.error);
         }
       });
     this.actualizarTablaAdministracion(nuevaID);
@@ -387,9 +407,14 @@ export class PanelComponent implements OnInit {
     }
     // TODO UX: deshabilitar formulario de navegacion y mostrar que se está actualizando
     this.usuariosService.getUsuariosPagina(this.filtroDePaginacion,this.paginaActual)
-      .subscribe((data:any) =>{
-        if(this.IDPeticion==nuevaID) {
-          this.usuariosPaginaActual=data;
+      .subscribe({
+        next:(data:any) =>{
+          if(this.IDPeticion==nuevaID) {
+            this.usuariosPaginaActual=data;
+          }
+        }
+        ,error:(err: HttpErrorResponse)=>{
+          this.toastr.error(err.error);
         }
       });
   }
@@ -455,28 +480,32 @@ export class PanelComponent implements OnInit {
       ,dato
       ,valor
     )
-      .subscribe((result: any)=>{
-        let datoMensaje;
+      .subscribe({
+        next:(result: any)=>{
+          let datoMensaje;
 
-        switch(dato){
-        case 'nombreCompleto':
-          // TODO Feature: Permitir these two si es admin
-        // case 'DNI':
-        // case 'nombreUsuario':
-          this.usuarioActual.nombreCompleto=valor;
-          datoMensaje='Nombre completo';
-          break;
-        case 'correo':
-          this.usuarioActual.correo=valor;
-          datoMensaje='Correo';
-          break;
+          switch(dato){
+          case 'nombreCompleto':
+            // TODO Feature: Permitir these two si es admin
+          // case 'DNI':
+          // case 'nombreUsuario':
+            this.usuarioActual.nombreCompleto=valor;
+            datoMensaje='Nombre completo';
+            break;
+          case 'correo':
+            this.usuarioActual.correo=valor;
+            datoMensaje='Correo';
+            break;
+          }
+
+          form.dataset['sucio']='0';
+          form.dataset['enviando']='0';
+
+          this.toastr.success(`${datoMensaje} actualizado.`);
         }
-
-        form.dataset['sucio']='0';
-        form.dataset['enviando']='0';
-
-        this.toastr.success(`${datoMensaje} actualizado.`);
+        ,error:(err: HttpErrorResponse)=>{
+          this.toastr.error(err.error);
+        }
       });
-      ;
   }
 }

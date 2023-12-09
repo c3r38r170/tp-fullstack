@@ -54,10 +54,15 @@ export class InicioComponent implements OnInit {
     // TODO que funcione bien
     this.usuarioService
       .create(u)
-      .subscribe((result:any)=>{
-        (document.getElementById('usuario') as HTMLInputElement).value = u.nombreUsuario;
-        (document.getElementById('contrasenia') as HTMLInputElement).value = u.contrasenia||'';
-        (document.getElementById('ingresar') as HTMLFormElement).submit();
+      .subscribe({
+        next:(result:any)=>{
+          (document.getElementById('usuario') as HTMLInputElement).value = u.nombreUsuario;
+          (document.getElementById('contrasenia') as HTMLInputElement).value = u.contrasenia||'';
+          (document.getElementById('ingresar') as HTMLFormElement).submit();
+        }
+        ,error:(err: HttpErrorResponse)=>{
+          this.toastr.error(err.error);
+        }
       });
   }
 
