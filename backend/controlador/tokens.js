@@ -48,13 +48,18 @@ function enviar(req, res) {
 		return;
 	}
 	
-	if(!emisor.amigos.some(ami=>(ami.ID==receptor.ID && ami.amistades.estado=='amigos'))){
+	if(!emisor.amigos.some(ami=>(ami.ID==req.body.amigoID && ami.amistades.estado=='amigos'))){
 		res.status(403).send("No se pueden enviar tokens a alguien que no sea de sus amistades.");
 		return;
 	}
 
 	usuarioDao.findById(req.body.amigoID)
 		.then(receptor=>{
+			if(!receptor){
+				res.status(404).send("Amigo no encontrado.");
+				return;
+			}
+
 			return tokensDao.enviar(emisor,receptor,req.body.cantidad);
 		})
 		.then((data) => {
