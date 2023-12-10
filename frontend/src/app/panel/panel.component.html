@@ -119,7 +119,6 @@
 			<em class="col is-center" *ngIf="amigosReales.length===0">No tenés amigos. 🙁 Todavía. 😉</em>
 
 			<div class="row">
-				<!-- TODO Feature para cada uno de estos, esconder si uno es el invitador o no...  ?? -->
 				<form *ngFor="let usuario of amigosReales" (submit)="eliminar($event)" class="col-6 row">
 					<input type="hidden" name="usuarioID" value="{{usuario.ID}}">
 					<span class="col text-left is-vertical-align">{{usuario.nombreCompleto}}</span>

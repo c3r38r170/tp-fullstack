@@ -22,13 +22,15 @@ export class PanelComponent implements OnInit {
 
   usuarioActual:Usuario={} as Usuario;
   
+  // * amigoID es quien recibe la invitación.
+  
   // TODO Refactor: DRY
   // TODO Refactor: sort
   get amigosEntrantes() {
-    return (this.usuarioActual?.amigos??[]).filter(ami=> ami.amistades.estado=='esperando' && ami.amistades.amigoID==this.usuarioActual.ID);
+    return (this.usuarioActual?.amigos??[]).filter(ami=> ami.amistades.estado=='esperando' && ami.amistades.amigoID==this.usuarioActual.ID); // ! amigoID SÍ ES usuarioActual.ID
   }
   get amigosSalientes() {
-    return (this.usuarioActual?.amigos??[]).filter(ami=> ami.amistades.estado=='esperando' && ami.amistades.amigoID!=this.usuarioActual.ID);
+    return (this.usuarioActual?.amigos??[]).filter(ami=> ami.amistades.estado=='esperando' && ami.amistades.amigoID!=this.usuarioActual.ID); // ! amigoID NO ES usuarioActual.ID
   }
   get amigosReales() {
     return (this.usuarioActual?.amigos??[]).filter(ami=> ami.amistades.estado!='esperando');
@@ -168,8 +170,9 @@ export class PanelComponent implements OnInit {
           (document.getElementById('resultados') as HTMLFieldSetElement).disabled=false;
         }
       })
-
   }
+
+  // * `cancelar`, `responder` y `eliminar` revisan si this.usuarioActual.amigos está vacío. Si estuviera vacío, estas funciones no deberían poder llamarse, por lo que ignoramos la llamada.
 
   cancelar(e:Event):void{
     e.preventDefault();
@@ -184,8 +187,6 @@ export class PanelComponent implements OnInit {
             let indice:number =this.usuarioActual.amigos.findIndex(usu=>usu.ID==usuarioID);
             this.toastr.success(`Invitación a ${this.usuarioActual.amigos[indice].nombreCompleto} eliminada.`);
             this.usuarioActual.amigos.splice(indice, 1);
-          }else{
-            this.console.log('Error al cancelar invitación. ¿No hay amigos?')
           }
         }
         ,error:(err: HttpErrorResponse)=>{
@@ -210,9 +211,7 @@ export class PanelComponent implements OnInit {
               amigoNuevo.amistades.estado=EstadosAmistades.Amigos
               // TODO Feature: Ver si esto realmente anda: /* 'amigos' */; //delet, Ig
               this.toastr.success(`¡Ahora vos y ${amigoNuevo.nombreCompleto} son amigos!`);
-            }else this.console.log('Error al responder positivamente a una invitación. ¿No hay amigos?');
-
-            return;
+            }
           }
           ,error:(err: HttpErrorResponse)=>{
             this.toastr.error(err.error);
@@ -226,7 +225,7 @@ export class PanelComponent implements OnInit {
             let indice:number =this.usuarioActual.amigos.findIndex(usu=>usu.ID==usuarioID);
             this.toastr.success(`Invitación de ${this.usuarioActual.amigos[indice].nombreCompleto} eliminada.`);
             this.usuarioActual.amigos.splice(indice, 1);
-          }else this.console.log('Error al eliminar invitación. ¿No hay amigos?');
+          }
         }
         ,error:(err: HttpErrorResponse)=>{
           this.toastr.error(err.error);
@@ -247,7 +246,7 @@ export class PanelComponent implements OnInit {
             let indice:number =this.usuarioActual.amigos.findIndex(usu=>usu.ID==usuarioID);
             this.toastr.success(`${this.usuarioActual.amigos[indice].nombreCompleto} ya no es tu amigo.`);
             this.usuarioActual.amigos.splice(indice, 1);
-          }else this.console.log('Error al eliminar un amigo. ¿No hay array amigos?');
+          }
         }
         ,error:(err: HttpErrorResponse)=>{
           this.toastr.error(err.error);
@@ -258,7 +257,7 @@ export class PanelComponent implements OnInit {
   generarTokens(e:Event):void{
     e.preventDefault();
 
-    // TODO por que no anda as number
+    // TODO Refactor por que no anda as number
     let cantidad=+((e.target as any)['form-generar-cantidad'].value);
     this.tokensService
       .generar(cantidad)
@@ -274,7 +273,7 @@ export class PanelComponent implements OnInit {
       });
   }
 
-  // TODO Refactor: Seguro puede volar esto...
+  // TODO Refactor: Seguro puede volar esto...  Tiene 2 referencias en el html
   asignarNombreABoton(e:Event):void{
     (e.target as HTMLInputElement).name='accion';
   }
@@ -307,7 +306,7 @@ export class PanelComponent implements OnInit {
     boton.disabled=true;
     this.tokensService.enviar(cantidad,amigoID).subscribe({
       next:()=>{
-        // TODO reiniciar formulario
+        // TODO Feature reiniciar formulario
         this.toastr.success('¡Se han enviado los tokens exitosamente!');
         this.usuarioActual.tokens-=cantidad;
       }
