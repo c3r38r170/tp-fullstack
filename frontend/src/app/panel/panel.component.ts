@@ -209,7 +209,6 @@ export class PanelComponent implements OnInit {
             if(this.usuarioActual.amigos){
               let amigoNuevo=this.usuarioActual.amigos.find(ami=>ami.ID==usuarioID) as Usuario;
               amigoNuevo.amistades.estado=EstadosAmistades.Amigos
-              // TODO Feature: Ver si esto realmente anda: /* 'amigos' */; //delet, Ig
               this.toastr.success(`¡Ahora vos y ${amigoNuevo.nombreCompleto} son amigos!`);
             }
           }

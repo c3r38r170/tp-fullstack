@@ -80,6 +80,7 @@ export class UsuarioService {
   }
 }
 
+// TODO Feature: sacar de la base de datos
 export enum EstadosAmistades {
   Esperando = 'esperando',
   Amigos='amigos'
