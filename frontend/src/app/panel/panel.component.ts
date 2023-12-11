@@ -78,28 +78,45 @@ export class PanelComponent implements OnInit {
           if(this.puedeGenerarTokens)
             this.tokensService
               .obtenerCantidadCirculando()
-              .subscribe((result: any)=>{
-                this.tokensCirculando=result;
+              .subscribe({
+                next:(result: any)=>{
+                  this.tokensCirculando=result;
+                }
+                ,error:this.atrapadorDeErroresGenérico
               });
 
           this.puedeAdministrarUsuarios=this.usuarioActual.permisos?.some((per:Permiso)=>per.ID==2) || false;
           if(this.puedeAdministrarUsuarios){
             this.usuariosService.getCantidadDePaginas('')
-              .subscribe((cantidadDePaginas: any)=>{
+              .subscribe({
+                next:(cantidadDePaginas: any)=>{
                   this.cantidadPaginas=cantidadDePaginas;
-                })
+                }
+                ,error:this.atrapadorDeErroresGenérico
+              })
 
             // TODO ver si puedo hacer algo mejor que esto ''
             this.usuariosService.getUsuariosPagina('',1)
-              .subscribe((result: any)=>{
-                this.usuariosPaginaActual=result;
+              .subscribe({
+                next:(result: any)=>{
+                  this.usuariosPaginaActual=result;
+                }
+                ,error:this.atrapadorDeErroresGenérico
               });
           }
         }
-        ,error:()=>{
-          this.router.navigate(['/'])
-        }
+        ,error:this.irAlIngreso
       });
+  }
+
+  irAlIngreso=()=>{
+    this.router.navigate(['/']);
+  }
+
+  atrapadorDeErroresGenérico=(err:HttpErrorResponse)=>{
+    if(err.status===401){
+      this.irAlIngreso();
+    }else this.toastr.error(err.error);
   }
 
   busqueda(e:Event):void{
@@ -163,9 +180,7 @@ export class PanelComponent implements OnInit {
           
           this.usuariosEncontrados.splice(indice, 1);
         }
-        ,error:(err: HttpErrorResponse)=>{
-          this.toastr.error(err.error);
-        }
+        ,error:this.atrapadorDeErroresGenérico
         ,complete:()=>{
           (document.getElementById('resultados') as HTMLFieldSetElement).disabled=false;
         }
@@ -189,9 +204,7 @@ export class PanelComponent implements OnInit {
             this.usuarioActual.amigos.splice(indice, 1);
           }
         }
-        ,error:(err: HttpErrorResponse)=>{
-          this.toastr.error(err.error);
-        }
+        ,error:this.atrapadorDeErroresGenérico
       })
   }
 
@@ -226,9 +239,7 @@ export class PanelComponent implements OnInit {
             this.usuarioActual.amigos.splice(indice, 1);
           }
         }
-        ,error:(err: HttpErrorResponse)=>{
-          this.toastr.error(err.error);
-        }
+        ,error:this.atrapadorDeErroresGenérico
       });
   }
 
@@ -247,9 +258,7 @@ export class PanelComponent implements OnInit {
             this.usuarioActual.amigos.splice(indice, 1);
           }
         }
-        ,error:(err: HttpErrorResponse)=>{
-          this.toastr.error(err.error);
-        }
+        ,error:this.atrapadorDeErroresGenérico
       });
   }
 
@@ -266,9 +275,7 @@ export class PanelComponent implements OnInit {
           this.tokensCirculando+=cantidad;
           this.usuarioActual.tokens+=cantidad;
         }
-        ,error:(err: HttpErrorResponse)=>{
-          this.toastr.error(err.error);
-        }
+        ,error:this.atrapadorDeErroresGenérico
       });
   }
 
@@ -281,13 +288,9 @@ export class PanelComponent implements OnInit {
     this.usuariosService
       .salir()
       .subscribe({
-        /* complete (finally) */next:()=>{
-          this.router.navigate(['/'])
-        }
+        /* complete (finally) */next:this.irAlIngreso
         /* TODO Feature: Ver los errores posibles, qué hacer en cada caso...
-        ,error:(err: HttpErrorResponse)=>{
-          this.toastr.error(err.error);
-        } */
+        ,error:this.atrapadorDeErroresGenérico */
       })
   }
 
@@ -333,9 +336,7 @@ export class PanelComponent implements OnInit {
         next:(result:any)=>{
           this.toastr.success(`El usuario se creó exitosamente.`);
         }
-        ,error:(err: HttpErrorResponse)=>{
-          this.toastr.error(err.error);
-        }
+        ,error:this.atrapadorDeErroresGenérico
       });
   }
 
@@ -357,9 +358,7 @@ export class PanelComponent implements OnInit {
           // TODO UX: Considerar si hace falta el cartel de éxito en ciertos casos, como este; que tienen una respuesta muy clara.
           this.toastr.success(`Permisos del usuario ${this.usuariosPaginaActual.find(usu=>usu.ID==usuarioID)?.nombreCompleto} actualizados.`);
         }
-        ,error:(err: HttpErrorResponse)=>{
-          this.toastr.error(err.error);
-        }
+        ,error:this.atrapadorDeErroresGenérico
       })
 
     return false;
@@ -381,9 +380,7 @@ export class PanelComponent implements OnInit {
             this.cantidadPaginas=cantidadDePaginas;
           }
         }
-        ,error:(err: HttpErrorResponse)=>{
-          this.toastr.error(err.error);
-        }
+        ,error:this.atrapadorDeErroresGenérico
       });
     this.actualizarTablaAdministracion(nuevaID);
   }
@@ -411,9 +408,7 @@ export class PanelComponent implements OnInit {
             this.usuariosPaginaActual=data;
           }
         }
-        ,error:(err: HttpErrorResponse)=>{
-          this.toastr.error(err.error);
-        }
+        ,error:this.atrapadorDeErroresGenérico
       });
   }
 
@@ -501,9 +496,7 @@ export class PanelComponent implements OnInit {
 
           this.toastr.success(`${datoMensaje} actualizado.`);
         }
-        ,error:(err: HttpErrorResponse)=>{
-          this.toastr.error(err.error);
-        }
+        ,error:this.atrapadorDeErroresGenérico
       });
   }
 }

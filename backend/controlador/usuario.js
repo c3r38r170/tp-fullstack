@@ -20,6 +20,9 @@ var usuarioController = {
     ,salir
 }
 
+// TODO Refactor: Centralizar esto
+let mensajeNoTienePermisos='No tiene los permisos necesarios.';
+
 function addUsuario(req, res) {
     // * Registro. Lo puede hacer cualquiera.
     let usuario = req.body;
@@ -38,7 +41,7 @@ function findUsuarioById(req, res) {
         .then((data) => {
             if(data)
                 res.send(data);
-            else res.status(404).send();
+            else res.status(404).send('Usuario no encontrado.');
         })
         .catch((error) => {
             res.status(500).send(error.message);
@@ -65,7 +68,7 @@ function deleteById(req, res) {
     }else{
         // TODO Refactor: Enum para los permisos
         if(!req.session.usuario.permisos.some((per)=>per.ID==2)){ // * 2 es Administrar usuarios
-            res.status(403).send('No tiene los permisos necesarios.');
+            res.status(403).send(mensajeNoTienePermisos);
         }else{
             eliminarUsuario();
         }
@@ -120,7 +123,7 @@ function cantidadDeUsuarios(req, res) {
 
     // TODO Refactor: Enum para los permisos (ver que en modelos/permiso.js tambien se propuso)
     if(!usuario.permisos.some((per)=>per.ID==2)){ //* Administrar Usuarios
-        res.status(403).send();
+        res.status(403).send(mensajeNoTienePermisos);
         return;
     }
 
@@ -141,7 +144,7 @@ function cambiarHabilitado(req, res) {
     // TODO Refactor: Enum para los permisos
     // TODO Refactor: Algún control centralizado de permisos? Tipo tengo(permisoID)
     if(!usuario.permisos.some((per)=>per.ID==2)){ // * Administrar usuarios
-        res.status(403).send();
+        res.status(403).send(mensajeNoTienePermisos);
         return;
     }
 
@@ -177,6 +180,7 @@ function ingresar(req, res) {
 
 function salir(req, res) {
     req.session.destroy();
+    // TODO Refactor: ¿Hace falta explicitar esto? Por lo menos dejarlo en un comentario
     res.status(200).send();
 }
 
@@ -240,8 +244,8 @@ function actualizarPermisos(req,res){
     let usuario=req.session.usuario;
     
     // TODO Refactor: Enum para los permisos
-    if(!usuario.permisos.some((per)=>per.ID==2)){
-        res.status(403).send();
+    if(!usuario.permisos.some((per)=>per.ID==2)){ // * Administrar permisos
+        res.status(403).send(mensajeNoTienePermisos);
         return;
     }
 
@@ -267,7 +271,7 @@ function actualizarDatos(req,res){
         // TODO Refactor: No me acuerdo como funciona el hoisting acá, pero estaría bueno que semánticamente esta función vaya después de los chequeos de abajo. Lo mismo más arriba con los permisos o de donde sea que saqué parte del algoritmo.
     let realizarActualizacion=()=>{
         if(!datosPosibles.includes(dato)){
-            res.status(400).send();
+            res.status(400).send('Hay un dato que no tiene permiso de actualizar.');
         }
         usuarioDao.findById(editadoID)
             .then(usuario=>{
@@ -285,7 +289,7 @@ function actualizarDatos(req,res){
         realizarActualizacion();
     }else{
         if(!req.session.usuario.permisos.some((per)=>per.ID==2)){
-            res.status(403).send();
+            res.status(403).send(mensajeNoTienePermisos);
         }else{
             // TODO Refactor: (duplicado) pasar habilitado para acá, de su propia función
             datosPosibles=datosPosibles.concat('DNI','nombreUsuario','habilitado');

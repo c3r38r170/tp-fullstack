@@ -6,14 +6,16 @@ var tokensController = {
 		,enviar
 }
 
+let mensajeNoTienePermisos='No tiene los permisos necesarios.';
+
 function obtenerCantidadCirculando(req, res) {
-	let usuario=req.params.usuario;
+	let usuario=req.session.usuario;
 
 	if(!usuario.permisos.some((per)=>per.ID==1)){
-		res.status(403).send('No tiene los permisos necesarios.');
+		res.status(403).send(mensajeNoTienePermisos);
 		return;
 	}
-
+	
 	tokensDao.obtenerCantidadCirculando()
 		.then((data) => {
 			res.send(data.count.toString());
@@ -26,7 +28,7 @@ function obtenerCantidadCirculando(req, res) {
 function generar(req,res){
 	let usuario=req.session.usuario;
 	if(!usuario.permisos.some((per)=>per.ID==1)){
-		res.status(403).send();
+		res.status(403).send(mensajeNoTienePermisos);
 		return;
 	}
 
@@ -44,7 +46,7 @@ function enviar(req, res) {
 	let emisor=req.session.usuario;
 	
 	if(!emisor.permisos.some(per=>per.ID==3)){
-		res.status(403).send("No tiene los permisos necesarios.");
+		res.status(403).send(mensajeNoTienePermisos);
 		return;
 	}
 	
