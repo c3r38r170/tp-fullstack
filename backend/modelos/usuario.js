@@ -28,6 +28,7 @@ const Usuario = db.define('usuario', {
         type: Sequelize.STRING,
         allowNull: false
     },
+    // TODO Now: setter para contrasenia, sacar hasheado de crear usuario
     contrasenia: {
         type: Sequelize.STRING,
         allowNull: false

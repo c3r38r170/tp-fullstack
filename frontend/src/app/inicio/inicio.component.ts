@@ -25,8 +25,9 @@ export class InicioComponent implements OnInit {
 
   intentarIngresar(e:SubmitEvent){
     e.preventDefault();
-
+    
     let form:HTMLFormElement=e.target as HTMLFormElement;
+    form['submit-button'].disabled = true;
     this.usuarioService
       .ingresar(form['usuario'].value,form['contrasenia'].value)
       .subscribe(
@@ -36,19 +37,25 @@ export class InicioComponent implements OnInit {
           }
           ,error:(err: HttpErrorResponse) => {
             this.toastr.error(err.error);
+            form['submit-button'].disabled = false;
           }
         }
       );
   }
 
+  // TODO UX: No se cierra el modal al clickear a los lados
   cerrarModal(t:EventTarget|null){
     this.registrandose=(t as HTMLElement).id!='modal';
   }
 
   registrarse(e:SubmitEvent){
     e.preventDefault();
-    
-    let u: Usuario=(((Object.fromEntries((new FormData(e.target as HTMLFormElement))))) as unknown) as Usuario;
+
+    let form=e.target as HTMLFormElement;
+
+    form['submit-button'].disabled = true;
+
+    let u: Usuario=(((Object.fromEntries((new FormData(form))))) as unknown) as Usuario;
     // u.permisos=[/* {ID:1} as Permiso */];
 
     // TODO que funcione bien
@@ -62,6 +69,7 @@ export class InicioComponent implements OnInit {
         }
         ,error:(err: HttpErrorResponse)=>{
           this.toastr.error(err.error);
+          form['submit-button'].disabled = false;
         }
       });
   }

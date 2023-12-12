@@ -56,6 +56,7 @@ export class PanelComponent implements OnInit {
   paginaActual:number=1;
   filtroDePaginacion:string='';
   IDPeticion:number=0;
+  ultimaIDPeticion:number=0;
 
   constructor(
     private usuarioActualService:UsuarioActualService,
@@ -164,7 +165,10 @@ export class PanelComponent implements OnInit {
   invitar(e:Event):void {
     e.preventDefault();
 
-    let usuarioID=(e.target as any)['usuarioID'].value;
+    let form=e.target as HTMLFormElement;
+
+    let usuarioID=form['usuarioID'].value;
+    form.dataset['esperando']='1';
 
     (document.getElementById('resultados') as HTMLFieldSetElement).disabled=true;
     this.usuariosService
@@ -183,16 +187,22 @@ export class PanelComponent implements OnInit {
         ,error:this.atrapadorDeErroresGenérico
         ,complete:()=>{
           (document.getElementById('resultados') as HTMLFieldSetElement).disabled=false;
+          form.dataset['esperando']='0';
         }
       })
   }
 
+  // TODO Refactor: DRY en cancelar y eliminar? son muy parecidos...
   // * `cancelar`, `responder` y `eliminar` revisan si this.usuarioActual.amigos está vacío. Si estuviera vacío, estas funciones no deberían poder llamarse, por lo que ignoramos la llamada.
 
   cancelar(e:Event):void{
     e.preventDefault();
 
-    let usuarioID=(e.target as any)['usuarioID'].value;
+    let form=e.target as HTMLFormElement;
+
+    let usuarioID=form['usuarioID'].value;
+    let boton=form['boton-submit'];
+    boton.disabled=true;
 
     this.usuariosService
       .eliminarInvitacion(usuarioID,true)
@@ -205,14 +215,20 @@ export class PanelComponent implements OnInit {
           }
         }
         ,error:this.atrapadorDeErroresGenérico
+        ,complete:()=>boton.disabled=false
       })
   }
 
   responder(e:Event):void{
     e.preventDefault();
 
-    let usuarioID=(e.target as any)['usuarioID'].value;
-    let botonApretado=(e.target as any)['accion'];
+    let form=e.target as HTMLFormElement;
+
+    let usuarioID=form['usuarioID'].value;
+    let botonApretado=form['accion'];
+
+    form.dataset['esperando']='1';
+    let desesperar=()=>form.dataset['esperando']='0';
 
     if(+botonApretado.value)
       this.usuariosService
@@ -225,9 +241,8 @@ export class PanelComponent implements OnInit {
               this.toastr.success(`¡Ahora vos y ${amigoNuevo.nombreCompleto} son amigos!`);
             }
           }
-          ,error:(err: HttpErrorResponse)=>{
-            this.toastr.error(err.error);
-          }
+          ,error:this.atrapadorDeErroresGenérico
+          ,complete:desesperar
         });
     else this.usuariosService
       .eliminarInvitacion(usuarioID,false)
@@ -240,14 +255,20 @@ export class PanelComponent implements OnInit {
           }
         }
         ,error:this.atrapadorDeErroresGenérico
+        ,complete:desesperar
       });
   }
 
   eliminar(e:Event):void{
     e.preventDefault();
 
+    let form=e.target as HTMLFormElement;
+
     // TODO Feature: Avisar que es no se puede deshacer
     let usuarioID=(e.target as any)['usuarioID'].value;
+    let boton=form['boton-submit'];
+    boton.disabled=true;
+
     this.usuariosService
       .eliminarAmigo(usuarioID)
       .subscribe({
@@ -259,14 +280,18 @@ export class PanelComponent implements OnInit {
           }
         }
         ,error:this.atrapadorDeErroresGenérico
+        ,complete:()=>boton.disabled=false
       });
   }
 
   generarTokens(e:Event):void{
     e.preventDefault();
 
-    // TODO Refactor por que no anda as number
-    let cantidad=+((e.target as any)['form-generar-cantidad'].value);
+    let form=e.target as HTMLFormElement;
+    // TODO Refactor por que no anda as number (cuando se suma más abajo). Se suma como string 🥴
+    let cantidad=+(form['form-generar-cantidad'].value);
+    let boton=form['form-generar-submit'];
+    boton.disabled=true;
     this.tokensService
       .generar(cantidad)
       .subscribe({
@@ -276,6 +301,7 @@ export class PanelComponent implements OnInit {
           this.usuarioActual.tokens+=cantidad;
         }
         ,error:this.atrapadorDeErroresGenérico
+        ,complete:()=>boton.disabled=false
       });
   }
 
@@ -294,7 +320,7 @@ export class PanelComponent implements OnInit {
       })
   }
 
-  // TODO Refactor: Queda feo... quitar?
+  // TODO Refactor: Queda feo... quitar?  cuando se quiso hacer directo del .value, a veces no se actualizaba
   actualizarAmigoSeleccionadoID(e:Event){
     this.amigoSeleccionadoID=+(e.target as HTMLInputElement).value;
   }
@@ -302,13 +328,12 @@ export class PanelComponent implements OnInit {
   enviarTokens(e:Event){
     e.preventDefault();
     
-    let cantidad=+((e.target as any)['form-enviar-cantidad'].value)
-      ,amigoID=+((e.target as any)['form-enviar-usuario'].value)
-      ,boton:HTMLInputElement=(e.target as any)['form-enviar-submit'];
-    boton.disabled=true;
+    let form=e.target as HTMLFormElement;
+    let cantidad=+(form['form-enviar-cantidad'].value)
+      ,amigoID=+(form['form-enviar-usuario'].value);
+    form.dataset['esperando']='1';
     this.tokensService.enviar(cantidad,amigoID).subscribe({
       next:()=>{
-        // TODO Feature reiniciar formulario
         this.toastr.success('¡Se han enviado los tokens exitosamente!');
         this.usuarioActual.tokens-=cantidad;
       }
@@ -316,7 +341,9 @@ export class PanelComponent implements OnInit {
         this.toastr.error(err.error);
       }
       ,complete:()=>{
-        boton.disabled=false;
+        form.dataset['esperando']='0';
+        form.reset();
+        this.amigoSeleccionadoID=0;
       }
     })
   }
@@ -324,19 +351,24 @@ export class PanelComponent implements OnInit {
   crearUsuario(e:Event){
     e.preventDefault();
     
-    let fD:FormData = new FormData(e.target as HTMLFormElement);
+    let form=e.target as HTMLFormElement;
+    let fD:FormData = new FormData(form);
+    let fieldset=form.firstElementChild as HTMLFieldSetElement;
 
+    // TODO Refactor: Ver si hay forma de evitar el as unknown as Algo
     let u: Usuario=(((Object.fromEntries(fD))) as unknown) as Usuario;
-    u.permisos=fD.getAll('permisoID').map(permisoID => ({ID:permisoID}) as unknown as Permiso)
+    u.permisos=fD.getAll('permisoID').map(permisoID => ({ID:permisoID}) as unknown as Permiso);
 
-    // TODO Feature: que funcione bien  ??? anda bien qué decís
+    fieldset.disabled=true;
+
     this.usuariosService
       .create(u)
       .subscribe({
-        next:(result:any)=>{
+        next:(/* result:any */)=>{
           this.toastr.success(`El usuario se creó exitosamente.`);
         }
         ,error:this.atrapadorDeErroresGenérico
+        ,complete:()=>fieldset.disabled=false
       });
   }
 
@@ -365,13 +397,13 @@ export class PanelComponent implements OnInit {
   }
 
   // TODO Refactor: private? Maybe esa es la solución al tema de las funcioncitas helper
-  nuevaIDPeticion():Number{
+  nuevaIDPeticion():number{
     return ++this.IDPeticion;
   }
 
   actualizarFiltroTablaAdministracion(e:Event) {
     this.filtroDePaginacion=(e.target as HTMLInputElement).value.trim();
-    let nuevaID:Number=this.nuevaIDPeticion();
+    let nuevaID:number=this.nuevaIDPeticion();
     // TODO Refactor: hacer alguna reacción o DRY con el primero.
     this.usuariosService.getCantidadDePaginas(this.filtroDePaginacion)
       .subscribe({
@@ -388,24 +420,26 @@ export class PanelComponent implements OnInit {
   navegar(e:Event){
     e.preventDefault();
 
-    if(!(e.target instanceof HTMLInputElement))
+    if(!(e.target instanceof HTMLButtonElement))
       return
   
   // TODO UX: disable stuff on send and such.
-    this.paginaActual+= +(e.target as HTMLInputElement).value;
+    this.paginaActual+= +(e.target as HTMLButtonElement).value;
     this.actualizarTablaAdministracion();
   }
 
-  actualizarTablaAdministracion(nuevaID:Number|null=null){
+  actualizarTablaAdministracion(nuevaID:number|null=null){
     if(!nuevaID){
       nuevaID=this.nuevaIDPeticion();
     }
+
     // TODO UX: deshabilitar formulario de navegacion y mostrar que se está actualizando
     this.usuariosService.getUsuariosPagina(this.filtroDePaginacion,this.paginaActual)
       .subscribe({
         next:(data:any) =>{
           if(this.IDPeticion==nuevaID) {
             this.usuariosPaginaActual=data;
+            this.ultimaIDPeticion=nuevaID;
           }
         }
         ,error:this.atrapadorDeErroresGenérico
@@ -483,18 +517,21 @@ export class PanelComponent implements OnInit {
           // case 'DNI':
           // case 'nombreUsuario':
             this.usuarioActual.nombreCompleto=valor;
-            datoMensaje='Nombre completo';
+            datoMensaje='Nombre completo actualizado.';
+            break;
+          case 'contrasenia':
+            datoMensaje='Contraseña actualizada.';
             break;
           case 'correo':
             this.usuarioActual.correo=valor;
-            datoMensaje='Correo';
+            datoMensaje='Correo actualizado.';
             break;
           }
 
           form.dataset['sucio']='0';
           form.dataset['enviando']='0';
 
-          this.toastr.success(`${datoMensaje} actualizado.`);
+          this.toastr.success(`${datoMensaje}`);
         }
         ,error:this.atrapadorDeErroresGenérico
       });

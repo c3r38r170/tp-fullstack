@@ -16,7 +16,8 @@
 		</label>
 		
 		<div class="row">
-			<input class="col-2" type="submit" value="Ingresar">
+			<progress class="col-2" *ngIf="submitBoton.disabled"></progress>
+			<input class="col-2" type="submit" name="submit-button" value="Ingresar" #submitBoton>
 		</div>
 		
 	</fieldset>
@@ -56,6 +57,7 @@
 				<input type="email" name="correo" placeholder="Correo electrónico" required class="col">
 			</label>
 			<div class="row">
+				<progress class="col-3" *ngIf="submitBoton.disabled"></progress>
 				<input type="submit" value="Registrarme" class="col-3">
 			</div>
 		</fieldset>

@@ -1,50 +1,51 @@
 <h1>Inicio</h1>
 <!-- TODO UX: llenar de íconos -->
 <!-- TODO UX: guardar los estados de open de los details -->
+<!-- TODO Refactor: Sacar los valores de píxeles de los anchos de los botones, ver de donde surgen los anchos -->
 
-<p>Tus tokens: <b id="tokens">{{usuarioActual?.tokens}}</b></p>
+<h2>Tus tokens: <b id="tokens">{{usuarioActual?.tokens}}</b></h2>
 
 <fieldset class="row card">
 	<legend><h2>Administración de Tokens</h2></legend>
 
-	<details class="col-12" open>
-		<summary><h3>Envío de tokens</h3></summary>
-		<form id=form-enviar (submit)="enviarTokens($event)">
-			<fieldset class="row">
-				<input
-					type="number"
-					name="form-enviar-cantidad"
-					id="form-enviar-cantidad"
-					step=1
-					value=1
-					min=1
-					max={{usuarioActual?.tokens}}
-					required
-					class="col"
-				>
-				<select
-					name="form-enviar-usuario"
-					id="form-enviar-usuario"
-					required
-					class="col-8"
-					(input)="actualizarAmigoSeleccionadoID($event)"
-				>
-					<option value="0" >Elegir destinatario</option>
-					
-					<option *ngFor="let usuario of amigosReales" value="{{usuario.ID}}">{{usuario.nombreCompleto}}</option>
-					
-				</select>
-				<input
-					class="col"
-					type=submit
-					value="Enviar tokens"
-					id=form-enviar-submit
-					[disabled]="!amigoSeleccionadoID"
-					title="Debe elegir un usuario para enviarle tokens."
-				>
-			</fieldset>
-		</form>
-	</details>
+	<h3>Envío de tokens</h3>
+	<form id=form-enviar (submit)="enviarTokens($event)" #formEnviar class="col-12">
+		<fieldset class="row">
+			<input
+				type="number"
+				name="form-enviar-cantidad"
+				id="form-enviar-cantidad"
+				step=1
+				value=1
+				min=1
+				max={{usuarioActual?.tokens}}
+				required
+				class="col"
+			>
+			<select
+				name="form-enviar-usuario"
+				id="form-enviar-usuario"
+				required
+				class="col-8"
+				(input)="actualizarAmigoSeleccionadoID($event)"
+			>
+				<option value="0" >Elegir destinatario</option>
+				
+				<option *ngFor="let usuario of amigosReales" value="{{usuario.ID}}">{{usuario.nombreCompleto}}</option>
+				
+			</select>
+			
+			<progress class="col" *ngIf="formEnviar.dataset['esperando']==='1'" style="min-width: 181px;"></progress>
+			<input
+				class="col"
+				type=submit
+				value="Enviar tokens"
+				id=form-enviar-submit
+				[disabled]="!amigoSeleccionadoID || formEnviar.dataset['esperando']==='1'"
+				title="Debe elegir un usuario para enviarle tokens."
+			>
+		</fieldset>
+	</form>
 
 	<ng-template [ngIf]="puedeGenerarTokens">
 		<details class="col-12">
@@ -63,7 +64,8 @@
 						placeholder="Cantidad de tokens"
 						class="col"
 					>
-					<input type=submit value=Generar class="col-2">
+					<progress class="col-2" *ngIf="submitBoton.disabled" style="min-width: 218px;"></progress>
+					<input type=submit name="form-generar-submit" value=Generar class="col-2" #submitBoton>
 					<p class="col-12">Tokens en circulación: <b id=tokens-circulando>{{tokensCirculando}}</b></p>
 				</fieldset>
 			</form>
@@ -85,9 +87,11 @@
 			<em class="col is-center" *ngIf="amigosEntrantes.length===0">No tenés invitaciones.</em>
 
 			<div class="row">
-				<form *ngFor="let usuario of amigosEntrantes" (submit)="responder($event)" class="col row">
+				<!-- TODO Feature: ver cómo afecta esto cunado hay muchas invitaciones -->
+				<form *ngFor="let usuario of amigosEntrantes" (submit)="responder($event)" class="col-12 row" #formEnviar>
 					<input type="hidden" name="usuarioID" value="{{usuario.ID}}">
 					<span class="col text-left is-vertical-align">{{usuario.nombreCompleto}}</span>
+					<progress class="col-4" *ngIf="formEnviar.dataset['esperando']==='1'"></progress>
 					<button type="submit" value="1" (click)="asignarNombreABoton($event)" class="fas fa-check col-2"></button>
 					<button type="submit" value="0" (click)="asignarNombreABoton($event)" class="button error fas fa-ban col-2"></button>
 				</form>
@@ -103,10 +107,11 @@
 			<em class="col is-center" *ngIf="amigosSalientes.length===0">No tenés invitaciones enviadas sin responder.</em>
 
 			<div class="row">
-				<form *ngFor="let usuario of amigosSalientes" (submit)="cancelar($event)" class="col-6 row">
+				<form *ngFor="let usuario of amigosSalientes" (submit)="cancelar($event)" class="col-12 row">
 					<input type="hidden" name="usuarioID" value="{{usuario.ID}}">
 					<span class="col text-left is-vertical-align">{{usuario.nombreCompleto}}</span>
-					<button type="submit" class="button error fas fa-xmark col-2"></button>
+					<progress class="col-2" *ngIf="submitBoton.disabled" style="min-width: 125px;"></progress>
+					<button type="submit" class="button error fas fa-xmark col-2" name="boton-submit" #submitBoton></button>
 				</form>
 			</div>
 		</details>
@@ -119,10 +124,11 @@
 			<em class="col is-center" *ngIf="amigosReales.length===0">No tenés amigos. 🙁 Todavía. 😉</em>
 
 			<div class="row">
-				<form *ngFor="let usuario of amigosReales" (submit)="eliminar($event)" class="col-6 row">
+				<form *ngFor="let usuario of amigosReales" (submit)="eliminar($event)" class="col-12 row">
 					<input type="hidden" name="usuarioID" value="{{usuario.ID}}">
 					<span class="col text-left is-vertical-align">{{usuario.nombreCompleto}}</span>
-					<button type="submit" class="button error fas fa-trash-can col-2"></button>
+					<progress class="col-2" *ngIf="submitBoton.disabled" style="min-width: 125px;"></progress>
+					<button type="submit" class="button error fas fa-trash-can col-2" name="boton-submit" #submitBoton></button>
 				</form>
 			</div>
 		</details>
@@ -138,10 +144,11 @@
 			<!-- TODO Refactor capturar el submit en el fieldset? -->
 			<!-- TODO Refactor: Pensar qué onda si viene muucha gente.  Crece de forma inparable. Solucionar con overflow o algo.-->
 			
-			<form *ngFor="let usuario of usuariosEncontrados" (submit)="invitar($event)" class="col-6 row">
+			<form *ngFor="let usuario of usuariosEncontrados" (submit)="invitar($event)" class="col-12 row" #formEnviar>
 				<input type="hidden" name="usuarioID" value="{{usuario.ID}}">
 				<span class="col text-left is-vertical-align">{{usuario.nombreCompleto}}</span>
-				<button type="submit" class="fas fa-plus col-4"></button>
+				<progress class="col-4" *ngIf="formEnviar.dataset['esperando']==='1'" style="min-width: 63px;"></progress>
+				<button type="submit" class="fas fa-plus col-4" name="boton-submit"></button>
 			</form>
 					
 		</fieldset>
@@ -159,38 +166,41 @@
 			<summary><h3>Crear usuario</h3></summary>
 
 			<form id=form-crear (submit)="crearUsuario($event)">
-				<label class="row">
-					<span class="col-2 is-center">Nombre completo</span>
-					<input type="text" name="nombreCompleto" placeholder="Nombre completo" required class="col" minLength="{{LARGO_MINIMO_NOMBRE_COMPLETO}}">
-				</label>
-				<label class="row">
-					<span class="col-2 is-center">DNI</span>
-					<input type="number" name="DNI" placeholder="DNI" required class="col" min="0">
-				</label>
-				<label class="row">
-					<span class="col-2 is-center">Nombre de usuario</span>
-					<input type="text" name="nombreUsuario" placeholder="Nombre de usuario" required class="col" minLength="{{LARGO_MINIMO_NOMBRE_USUARIO}}">
-				</label>
-				<label class="row">
-					<span class="col-2 is-center">Contraseña temporal</span>
-					<input type="text" name="contrasenia" placeholder="Contraseña" required class="col" minLength="{{LARGO_MINIMO_CONTRASENIA}}">
-				</label>
-				<label class="row">
-					<span class="col-2 is-center">Correo electrónico</span>
-					<input type="email" name="correo" placeholder="Correo electrónico" required class="col">
-				</label>
-				<!-- ! No hay condicional, porque si esto se ve, el usuario tiene minimo permiso de crear usuarios -->
-				<fieldset class="row">
-					<legend>Permisos</legend>
-					<label *ngFor="let permiso of usuarioActual.permisos" class="col-4 row">
-						<input type="checkbox" name="permisoID" value="{{permiso.ID}}" [checked]="permiso.predeterminado">
-						<span class="col">{{permiso.descripcion}}</span>
+				<fieldset class="card" #fieldset>
+					<label class="row">
+						<span class="col-2 is-center">Nombre completo</span>
+						<input type="text" name="nombreCompleto" placeholder="Nombre completo" required class="col" minLength="{{LARGO_MINIMO_NOMBRE_COMPLETO}}">
 					</label>
+					<label class="row">
+						<span class="col-2 is-center">DNI</span>
+						<input type="number" name="DNI" placeholder="DNI" required class="col" min="0">
+					</label>
+					<label class="row">
+						<span class="col-2 is-center">Nombre de usuario</span>
+						<input type="text" name="nombreUsuario" placeholder="Nombre de usuario" required class="col" minLength="{{LARGO_MINIMO_NOMBRE_USUARIO}}">
+					</label>
+					<label class="row">
+						<span class="col-2 is-center">Contraseña temporal</span>
+						<input type="text" name="contrasenia" placeholder="Contraseña" required class="col" minLength="{{LARGO_MINIMO_CONTRASENIA}}">
+					</label>
+					<label class="row">
+						<span class="col-2 is-center">Correo electrónico</span>
+						<input type="email" name="correo" placeholder="Correo electrónico" required class="col">
+					</label>
+					<!-- ! No hay condicional, porque si esto se ve, el usuario tiene minimo permiso de crear usuarios -->
+					<fieldset class="row">
+						<legend>Permisos</legend>
+						<label *ngFor="let permiso of usuarioActual.permisos" class="col-4 row">
+							<input type="checkbox" name="permisoID" value="{{permiso.ID}}" [checked]="permiso.predeterminado">
+							<span class="col">{{permiso.descripcion}}</span>
+						</label>
+					</fieldset>
+					<div class="row">
+						<div class="col-9"></div>
+						<progress class="col" *ngIf="fieldset.disabled" style="min-width: 258px;"></progress>
+						<input type="submit" value="Crear usuario" class="col">
+					</div>
 				</fieldset>
-				<div class="row">
-					<div class="col-9"></div>
-					<input type="submit" value="Crear usuario" class="col">
-				</div>
 			</form>
 		</details>
 		<details id="administrar-permisos" class="col-12">
@@ -211,7 +221,15 @@
 				</thead>
 				
 				<tbody (submit)="actualizarPermisos($event)">
-					<tr *ngFor="let usu of usuariosPaginaActual" #tr (change)="tr.dataset['sucio']='1'">
+					<ng-template [ngIf]="IDPeticion!==ultimaIDPeticion">
+						<tr *ngFor="let i of usuariosPaginaActual" class="tr-esperando">
+							<td colSpan="{{(usuarioActual.permisos?.length||0)+4}}">
+								<progress style="width: 100%;"></progress>
+							</td>
+						</tr>
+					</ng-template>
+
+					<tr *ngFor="let usu of usuariosPaginaActual" #tr (change)="tr.dataset['sucio']='1'" class="tr-usuario">
 						<td>
 							<a class="{{usu.habilitado?'':'tachado'}}" [routerLink]="['/detalle',usu.ID]" (click)="establecerUsuarioADetallar($event)" attr.data-id="{{usu.ID}}">{{usu.nombreCompleto}}</a>
 						</td>
@@ -254,6 +272,7 @@
 			<span class="col-2 is-center">Nombre Completo:</span>
 			<input required type="text" name="nombreCompleto" class="col-4" placeholder="Nombre Completo" (input)="nombreCompletoForm.dataset['sucio']='1'" [defaultValue]="usuarioActual.nombreCompleto" minLength="{{LARGO_MINIMO_NOMBRE_COMPLETO}}">
 			<button class="col-2" type="reset">Reestablecer</button>
+			<progress class="col-2" *ngIf="nombreCompletoForm.dataset['enviando']==='1'"></progress>
 			<button class="col-2" type="submit" [disabled]="(nombreCompletoForm.dataset['sucio']!=='1')">Actualizar</button>
 		</fieldset>
 	</form>
@@ -262,6 +281,7 @@
 			<span class="col-2 is-center">Contraseña:</span>
 			<input required type="password" name="contrasenia" placeholder="Contraseña Nueva" class="col-3" minLength="{{LARGO_MINIMO_CONTRASENIA}}">
 			<input required type="password" name="contrasenia-repetida" class="col-3" placeholder="Repetir Contraseña" minLength="{{LARGO_MINIMO_CONTRASENIA}}">
+			<progress class="col-2" *ngIf="contraseniaForm.dataset['enviando']==='1'"></progress>
 			<button class="col-2" type="submit" [disabled]="(contraseniaForm.dataset['puedeEnviar']!=='-1')" [title]="ERRORES_DE_CONTRASENIA[+(contraseniaForm.dataset['puedeEnviar']||0)]">Actualizar</button>
 		</fieldset>	
 	</form>
@@ -270,6 +290,7 @@
 			<span class="col-2 is-center">Correo Electrónico:</span>
 			<input required type="email" name="correo" class="col-4" (input)="correoForm.dataset['sucio']='1'" [defaultValue]="usuarioActual.correo">
 			<button class="col-2" type="reset">Reestablecer</button>
+			<progress class="col-2" *ngIf="correoForm.dataset['enviando']==='1'"></progress>
 			<button class="col-2" type="submit" [disabled]="(correoForm.dataset['sucio']!=='1')">Actualizar</button>
 		</fieldset>
 	</form>

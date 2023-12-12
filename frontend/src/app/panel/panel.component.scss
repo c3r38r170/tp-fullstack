@@ -2,12 +2,34 @@
 	border:none;
 }
 
+progress{
+	height:calc(3.6rem + 2px);
+
+	& ~input,& ~button{
+		display: none;
+	}
+}
+
 summary h3{
 	display: inline-block;
 	user-select: none;
 }
 
-#form-crear > fieldset{
+#amigos,#invitaciones{
+	em{
+		background: #FF04;
+		padding: 1rem;
+		border-radius: 4PX;
+	}
+
+	form{
+		background: color-mix(in srgb, var(--color-grey), transparent 80%);
+		padding-top: calc(var(--grid-gutter)/2);
+		border-radius: 4PX;
+	}
+}
+
+#form-crear fieldset{
 	margin-bottom: 10px;
 }
 
@@ -16,6 +38,9 @@ summary h3{
 		text-align: center;
 	}
 	tbody{
+		.tr-esperando ~ tr.tr-usuario{
+			display: none;
+		}
 		td{
 			text-align: center;
 		}

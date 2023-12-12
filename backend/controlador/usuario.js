@@ -26,6 +26,7 @@ let mensajeNoTienePermisos='No tiene los permisos necesarios.';
 function addUsuario(req, res) {
     // * Registro. Lo puede hacer cualquiera.
     let usuario = req.body;
+    // TODO Now: permisos por default
     usuario.habilitado=true;
     usuarioDao.create(usuario)
         .then((data) => {

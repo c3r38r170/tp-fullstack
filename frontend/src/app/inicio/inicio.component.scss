@@ -1,3 +1,12 @@
 #modal{
 	width:60%;
 }
+
+// TODO Refactor: DRY, esto está en inicio, panel y detalle
+progress{
+	height:calc(3.6rem + 2px);
+
+	& +input{
+		display: none;
+	}
+}

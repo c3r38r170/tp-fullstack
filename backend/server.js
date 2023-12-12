@@ -36,35 +36,31 @@ var corsOptions = {
 app.use(cors(corsOptions));
 
 app.use((req,res,next) => {
-    // TODO Feature: Restringir verbo tambien (? ver si no es mejor hacerlo en cada uno... más que nada en api/usuarios)  sería agregar otro if
 
-    if([
+    if(req.session.usuarioID){
+        usuarioDao.findById(req.session.usuarioID,{incluirHabilitado:true})
+            .then(usuario=>{
+                if(!usuario){
+                    res.status(404).send('Sesión inválida.');
+                    return;
+                }
+
+                if(usuario.habilitado){
+                    req.session.usuario=usuario;
+                    next();
+                }else res.status(403).send('Su cuenta ha sido deshabilitada.');
+                // TODO Feature log out
+            })
+            .catch(error=>res.status(500).send(error.message));
+    }else if([
         '/api/usuarios' // Registro.
         ,'/api/usuarios/ingresar'
         ,'/api/usuarios/salir'
         // ,'/api/permisos' // * No porque pensemos que solo se podrían ver los permisos que tiene cada uno, no el resto. Alguien sin loguear no puede verlos.
     ].includes(req.path))
         next();
-    else{
-        if(!req.session.usuarioID){
-            res.status(401).send('Inicie sesión.');
-        }else{
-            usuarioDao.findById(req.session.usuarioID,{incluirHabilitado:true})
-                .then(usuario=>{
-                    if(!usuario){
-                        res.status(404).send('Sesión inválida.');
-                        return;
-                    }
-
-                    if(usuario.habilitado){
-                        req.session.usuario=usuario;
-                        next();
-                    }else res.status(403).send('Su cuenta ha sido deshabilitada.');
-                    // TODO Feature log out
-                })
-                .catch(error=>res.status(500).send(error.message));
-        }
-    }
+        // TODO Feature: Restringir verbo tambien (? ver si no es mejor hacerlo en cada uno... más que nada en api/usuarios)  sería agregar otro if
+    else res.status(401).send('Inicie sesión.');
 })
 
 app.use('/api',require('./rutas/todas'))

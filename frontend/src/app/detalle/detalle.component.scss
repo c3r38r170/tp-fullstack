@@ -10,3 +10,11 @@
 fieldset.is-full-width.is-marginless.is-paddingless.row{
 	border: none;
 }
+
+progress{
+	height:calc(3.6rem + 2px);
+
+	& ~input,& ~button{
+		display: none;
+	}
+}
