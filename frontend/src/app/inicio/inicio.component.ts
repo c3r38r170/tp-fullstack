@@ -56,9 +56,8 @@ export class InicioComponent implements OnInit {
     form['submit-button'].disabled = true;
 
     let u: Usuario=(((Object.fromEntries((new FormData(form))))) as unknown) as Usuario;
-    // u.permisos=[/* {ID:1} as Permiso */];
 
-    // TODO que funcione bien
+    // TODO Feature que funcione bien. Ahora mismo se crea y todo pero se reinicia la página
     this.usuarioService
       .create(u)
       .subscribe({

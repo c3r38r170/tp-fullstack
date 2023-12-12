@@ -2,7 +2,6 @@ const {Usuario,Token,Amistades,ESTADOS_AMISTADES} = require('../modelos/usuario'
 const {Permiso,UsuarioPermiso} = require('../modelos/permiso');
 const permisoDao = require('./permiso');
 const Sequelize =require('sequelize');
-const bcrypt = require('bcrypt');
 var usuarioDao = {
     findAll: findAll,
     create: create,
@@ -137,8 +136,6 @@ function create(usuario) {
     let permisos=usuario.permisos;
     delete usuario.permisos;
 
-    usuario.contrasenia=bcrypt.hashSync(usuario.contrasenia, bcrypt.genSaltSync(8));
-
     let nuevoUsuario;
 
     return Promise.all(
@@ -188,7 +185,9 @@ function updateUsuario(usuario, id) {
         .then(oldUsuario=>{
             let diferencia=usuario.tokens-oldUsuario.tokensAsociadas.length;
 
-            let cambios=[permisosIDsAPermisos(usuario.permisos)];
+            let cambios=[
+                permisosIDsAPermisos(usuario.permisos)
+            ];
 
             if(diferencia>0){
                 cambios.push(aniadirTokens(oldUsuario,diferencia));

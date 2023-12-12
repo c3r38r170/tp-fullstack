@@ -1,6 +1,7 @@
 
 const Sequelize = require('sequelize');
 const db = require('../datos/db');
+const bcrypt = require('bcrypt');
 
 const Token = db.define('token', {
     ID: {
@@ -28,10 +29,12 @@ const Usuario = db.define('usuario', {
         type: Sequelize.STRING,
         allowNull: false
     },
-    // TODO Now: setter para contrasenia, sacar hasheado de crear usuario
     contrasenia: {
         type: Sequelize.STRING,
         allowNull: false
+        ,set(value){
+            this.setDataValue('contrasenia', bcrypt.hashSync(value, bcrypt.genSaltSync(8)));
+        }
     },
     correo: {
         type: Sequelize.STRING,

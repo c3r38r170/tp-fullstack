@@ -33,7 +33,7 @@
 		<fieldset>
 			<label class="row">
 				<h3 class="col-3 is-center">Nombre completo</h3>
-				<!-- TODO chequeos en todos los campos acá y en el formulario de crear usuario -->
+				<!-- TODO Feature: chequeos en todos los campos acá y en el formulario de crear usuario; y no olvidar el backend -->
 				<input type="text" name="nombreCompleto" placeholder="Nombre completo" required class="col">
 			</label>
 			<label class="row">
@@ -44,6 +44,7 @@
 				<h3 class="col-3 is-center">Nombre de usuario</h3>
 				<input type="text" name="nombreUsuario" placeholder="Nombre de usuario" required class="col">
 			</label>
+			<!-- TODO UX: Quizá hacer los 2 campos de contraseña uno solo, poner uno al lado del otro -->
 			<label class="row">
 				<h3 class="col-3 is-center">Contraseña</h3>
 				<input type="password" name="contrasenia" placeholder="Contraseña" required class="col">
@@ -58,7 +59,7 @@
 			</label>
 			<div class="row">
 				<progress class="col-3" *ngIf="submitBoton.disabled"></progress>
-				<input type="submit" value="Registrarme" class="col-3">
+				<input type="submit" #submitBoton name="submit-button" value="Registrarme" class="col-3">
 			</div>
 		</fieldset>
 	</form>

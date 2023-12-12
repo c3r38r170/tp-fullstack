@@ -23,7 +23,7 @@ export class UsuarioService {
     return this.clienteHTTP.post(this.URL+`ingresar`,{
       usuario
       ,contrasenia
-    },{withCredentials: true});
+    },{withCredentials: true}); // ! No es porque se envien credenciales, sino porque se reciben.
   }
 
   salir(){

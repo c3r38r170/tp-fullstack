@@ -51,7 +51,7 @@ app.use((req,res,next) => {
             })
             .catch(error=>res.status(500).send(error.message));
     }else if([
-        '/api/usuarios' // Registro.
+        '/api/usuarios/' // Registro.
         ,'/api/usuarios/ingresar'
         ,'/api/usuarios/salir'
         // ,'/api/permisos' // * No porque pensemos que solo se podrían ver los permisos que tiene cada uno, no el resto. Alguien sin loguear no puede verlos.

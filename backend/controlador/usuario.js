@@ -264,7 +264,7 @@ function actualizarDatos(req,res){
     let dato=req.body.dato;
     let datosPosibles=[
         'nombreCompleto'
-        // TODO Now: setter de contraseña, ver cómo se hace en la creación
+        // TODO Refactor: setter de contraseña, esto se aplicaría en create y updateUsuario
         ,'contrasenia'
         ,'correo'
     ]
