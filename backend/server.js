@@ -1,7 +1,5 @@
 // Use Express
 var express = require("express");
-// Use body-parser
-var bodyParser = require("body-parser");
 var cors = require("cors");
 var session = require('express-session');
 
@@ -19,9 +17,9 @@ app.use(session({
 // Define the JSON parser as a default way 
 // to consume and produce data through the 
 // exposed APIs
-app.use(bodyParser.json());
+app.use(express.json());
 // TODO ver si esto es necesario para asociar permisos.
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true }));
 
 // Create link to Angular build directory
 // The `ng build` command will save the result
