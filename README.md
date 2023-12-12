@@ -21,9 +21,9 @@ Las tokens las crea un usuario administrador que las da por alguna razón ajena 
   <tr><td>También hay que hacer un login, un register.</td><td>:heavy_check_mark:</td></tr>
   <tr><td>Contraseñas hasheadas.</td><td>:heavy_check_mark:</td></tr>
   <tr><td colspan=2 align=center><b>A razón de la reunión llevada a cabo el 25 de Octubre:</b></td></tr>
-  <tr><td>body-parser está obsoleto</td><td></td></tr>
-  <tr><td>El manejo de errores debe ser total.</td><td></td></tr>
-  <tr><td>Consistencia en la comunicación entre capas.</td><td></td></tr>
+  <tr><td>body-parser está obsoleto</td><td>:heavy_check_mark:</td></tr>
+  <tr><td>El manejo de errores debe ser total.</td><td>:heavy_check_mark:</td></tr>
+  <tr><td>Consistencia en la comunicación entre capas.</td><td>:heavy_check_mark:</td></tr>
   <tr><td>Comprobar relaciones en las operaciones (de "permisos" y "amistades")</td><td>:heavy_check_mark:</td></tr>
   <tr><td>Sanitización total de input (preferentemente con alguna librería)</td><td></td></tr>
   <!-- <tr><td colspan=2 align=center><b>Cosas que me dijeron los profesores de los proyectos en los que está basado este:</b></td></tr>

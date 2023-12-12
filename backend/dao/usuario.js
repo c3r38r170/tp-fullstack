@@ -51,17 +51,11 @@ function valoresEspecialesUsuario(usuario,incluirTokensAsociadas=false,incluirAm
 
 const CANTIDAD_POR_PAGINA=usuarioDao.cantidadPorPagina;
 
-async function permisosIDsAPermisos(permisosIDs){
-    let permisosReales=[];
-    for(let {ID:permisoID} of permisosIDs) {
-        permisosReales.push(
-            await permisoDao.findById(permisoID)
-        );
-    }
-    return permisosReales;
+function permisosIDsAPermisos(permisos){
+    return Promise.all(permisos.map(p=>permisoDao.findById(p.ID)));
 }
 
-async function findAll({
+function findAll({
     incluirContrasenia=false
     ,incluirHabilitado=false
     ,incluirTokensAsociadas=false
@@ -104,10 +98,14 @@ async function findAll({
 
     // ? findOptions está de más?
     findOptions.attributes = attributes;
-    return (await Usuario.findAll(findOptions)).map(usu=>valoresEspecialesUsuario(usu,incluirTokensAsociadas));
+    return Usuario.findAll(findOptions)
+        .then(all=>{
+            return all.map(usu=>valoresEspecialesUsuario(usu,incluirTokensAsociadas));
+        })
+    // return (await Usuario.findAll(findOptions)).map(usu=>valoresEspecialesUsuario(usu,incluirTokensAsociadas));
 }
 
-async function findById(id,{incluirHabilitado=false}={}) {
+function findById(id,{incluirHabilitado=false}={}) {
     let attributes=[
         'ID'
         ,'nombreCompleto'
@@ -118,27 +116,54 @@ async function findById(id,{incluirHabilitado=false}={}) {
     if(incluirHabilitado)
         attributes.push('habilitado');
 
-    let usuario=await Usuario.findByPk(id,{
+    return Usuario.findByPk(id,{
         include
         ,attributes
-    });
-    if(usuario){
-        usuario=valoresEspecialesUsuario(usuario);
-    }
-    return usuario;
+    })
+        .then(usuario=>{
+            if(usuario){
+                usuario=valoresEspecialesUsuario(usuario);
+            }
+            return usuario;
+        });
 }
 
 function deleteById(id) {
     return Usuario.destroy({ where: { id } });
 }
 
-async function create(usuario) {
+function create(usuario) {
     usuario.tokensAsociadas=new Array(+(usuario.tokens||0)).fill({});
     let permisos=usuario.permisos;
     delete usuario.permisos;
 
-    usuario.contrasenia=bcrypt.hashSync(usuario.contrasenia, bcrypt.genSaltSync(8))
+    usuario.contrasenia=bcrypt.hashSync(usuario.contrasenia, bcrypt.genSaltSync(8));
 
+    let nuevoUsuario;
+
+    return Promise.all(
+        [
+            Usuario.create(usuario,{
+                include:[{
+                    model:Token
+                    ,as:'tokensAsociadas'
+                },Permiso]
+            })
+            ,(permisos?
+                permisosIDsAPermisos(permisos)
+                :Permiso.findAll({where:{predeterminado:true}})
+            )
+        ]
+    )
+        .then(([usuarioCreado,objetosPermisos])=>{
+            nuevoUsuario=usuarioCreado;
+            return nuevoUsuario.setPermisos(objetosPermisos);
+        })
+        .then(()=>{
+            nuevoUsuario.save();
+        })
+        .then(()=>findById(nuevoUsuario.ID));
+/* 
     let nuevoUsuario=await Usuario.create(usuario,{
         include:[{
             model:Token
@@ -148,58 +173,70 @@ async function create(usuario) {
 
     if(permisos){
         let permisosReales=await permisosIDsAPermisos(permisos);
-        await nuevoUsuario.setPermisos(permisosReales);
+        nuevoUsuario.setPermisos(permisosReales);
     }else{
         let permisosPredeterminados=await Permiso.findAll({where:{predeterminao:true}});
-        await nuevoUsuario.setPermisos(permisosPredeterminados);
+        nuevoUsuario.setPermisos(permisosPredeterminados);
     }
 
-    await nuevoUsuario.save();
-
-    return findById(nuevoUsuario.ID);
+    return nuevoUsuario.save()
+        .then(()=>findById(nuevoUsuario.ID)); */
 }
 
-async function updateUsuario(usuario, id) {
-    
-    let oldUsuario=await findById(id);
-    let diferencia=usuario.tokens-oldUsuario.tokensAsociadas.length;
-    if(diferencia>0){
-        await aniadirTokens(oldUsuario,diferencia);
-    }else if(diferencia<0){
-        await quitarTokens(oldUsuario,-diferencia);
-    }
-    
-    usuario.permisos=permisosIDsAPermisos(usuario.permisos);
+function updateUsuario(usuario, id) {
+    return findById(id)
+        .then(oldUsuario=>{
+            let diferencia=usuario.tokens-oldUsuario.tokensAsociadas.length;
 
-    // TODO usar save? probar la base de datos en Planet Scale
-    return Usuario.update(usuario, { where: { id } });
+            let cambios=[permisosIDsAPermisos(usuario.permisos)];
+
+            if(diferencia>0){
+                cambios.push(aniadirTokens(oldUsuario,diferencia));
+            }else if(diferencia<0){
+                cambios.push(quitarTokens(oldUsuario,-diferencia));
+            }
+            
+            return Promise.all(cambios);
+        })
+        .then(([permisos])=>{
+            usuario.permisos=permisos;
+
+            // TODO Feature: usar save? probar la base de datos en Planet Scale
+            return Usuario.update(usuario, { where: { id } });
+        })
 }
 
-async function aniadirTokens(usuario,cantidad){
+function aniadirTokens(usuario,cantidad){
     if(!cantidad)
         return;
 
     return Token.bulkCreate(new Array(cantidad).fill(new Token()))
         .then(nuevasTokens=>{
-            usuario.setTokensAsociadas(nuevasTokens);
+            return usuario.setTokensAsociadas(nuevasTokens);
         });
 }
 
-async function quitarTokens(usuario,cantidad){
+function quitarTokens(usuario,cantidad){
+    // TODO Feature: qué pasa si un método que devuelve promesas falla? ver tambien en aniadirTokens  ... tiramos un error y se triguerea catch?
     if(!cantidad)
         return;
 
-    let tokensAsociadas=await usuario.getTokensAsociadas();
-    for(let i=0;i<cantidad;i++)
-        tokensAsociadas[i].destroy();
-    // await usuario.removeTokensAsociadas(tokensAsociadas.splice(0,cantidad));
+    return usuario.getTokensAsociadas()
+        .then(tokensAsociadas=>{
+            // TODO Feature: Creo que esto no anda a menos que devuelva una promise... cuyo caso sería Promise.all(new Array...)?? a menos que se implemente removeTokensAsociadas
+            for(let i=0;i<cantidad;i++)
+                tokensAsociadas[i].destroy();
+            // TODO Refactor: Tratar de hacer esto.
+            // await usuario.removeTokensAsociadas(tokensAsociadas.splice(0,cantidad));
+        })
 }
 
-async function buscarNoAmigosPorNombre(consulta,usuarioID,{pagina=0}){
-    return (await buscarPorNombre(consulta,usuarioID,{pagina})).filter(usu=>!usu.amigos.some(ami=>ami.ID==usuarioID));
+function buscarNoAmigosPorNombre(consulta,usuarioID,{pagina=0}){
+    return buscarPorNombre(consulta,usuarioID,{pagina})
+        .then(usuarios=>usuarios.filter(usu=>!usu.amigos.some(ami=>ami.ID==usuarioID)));
 }
 
-async function buscarPorNombre(consulta,usuarioID,{pagina=0,soloHabilitados=true}={}){
+function buscarPorNombre(consulta,usuarioID,{pagina=0,soloHabilitados=true}={}){
     let where={
         ID:{
             [Sequelize.Op.not]:usuarioID
@@ -226,14 +263,15 @@ async function buscarPorNombre(consulta,usuarioID,{pagina=0,soloHabilitados=true
     });
 }
 
-async function cambiarHabilitado(id,valor){
-
-    let usuario=await findById(id,{incluirHabilitado:true});
-    usuario.habilitado=valor;
-    return usuario.save();
+function cambiarHabilitado(id,valor){
+    return findById(id,{incluirHabilitado:true})
+        .then(usuario=>{
+            usuario.habilitado=valor;
+            return usuario.save();
+        });
 }
 
-async function findByUsername(usuario){
+function findByUsername(usuario){
     return findAll({
         where:{
             nombreUsuario:usuario
@@ -242,8 +280,8 @@ async function findByUsername(usuario){
     });
 }
 
-async function invitar(invitadorID,invitadoID){
-    Promise.all([findById(invitadorID),findById(invitadoID)])
+function invitar(invitadorID,invitadoID){
+    return Promise.all([findById(invitadorID),findById(invitadoID)])
         .then(usuarios=>{
             usuarios[0].addAmigosInvitados(
                 usuarios[1]
@@ -252,44 +290,45 @@ async function invitar(invitadorID,invitadoID){
         })
 }
 
-async function eliminarInvitacion(invitadorID,invitadoID){
-    Promise.all([findById(invitadorID),findById(invitadoID)])
-        .then(usuarios=>{
-            usuarios[0].removeAmigosInvitados(
-                usuarios[1]
+function eliminarInvitacion(invitadorID,invitadoID){
+    let invitadorAGuardar;
+    return Promise.all([findById(invitadorID),findById(invitadoID)])
+        .then(([invitador,invitado])=>{
+            invitadorAGuardar=invitador
+            return invitadorAGuardar.removeAmigosInvitados(
+                invitado
             );
-            return usuarios[0].save();
+        }).then(()=>{
+            return invitadorAGuardar.save();
         })
 }
 
-async function aceptarInvitacion(invitadoID,invitadorID){
-    findById(invitadorID)
+function aceptarInvitacion(invitadoID,invitadorID){
+    return findById(invitadorID)
         .then(invitador=>{
             let amistad=invitador.amigosInvitados.find(usu=>usu.ID==invitadoID);
             if(amistad){
                 amistad.amistades.estado='amigos';
 
                 return amistad.amistades.save();
-            } // TODO else fallar http
+            } // TODO Feature else fallar http
         });
 }
 
-async function eliminarAmigo(usuarioID,amigoID){
-    findById(usuarioID)
+function eliminarAmigo(usuarioID,amigoID){
+    return findById(usuarioID)
         .then(usuario=>{
             let amistad=usuario.amigosAceptados.find(usu=>usu.ID==amigoID);
             if(amistad){
                 return amistad.amistades.destroy();
-            } // TODO else fallar http // O, no-content
+            } // TODO Feature else fallar http // O, no-content
         });
 }
 
-async function actualizarPermisos(id,permisos){
-
-    let usuario=await findById(id,{incluirHabilitado:true});
-    // TODO Encontrar la forma de hacer esto implícito.
-    return Promise.all(permisos.map(p=>(permisoDao.findById(p.ID))))
-        .then(permisos=>{
+function actualizarPermisos(id,permisos){
+    // TODO Encontrar la forma de hacer esto implícito.  Quizá con un include?
+    return Promise.all([findById(id,{incluirHabilitado:true}),...permisos.map(p=>(permisoDao.findById(p.ID)))])
+        .then(([usuario,...permisos])=>{
             usuario.setPermisos(permisos);
             return usuario.save();
         });

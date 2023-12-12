@@ -26,7 +26,6 @@ let mensajeNoTienePermisos='No tiene los permisos necesarios.';
 function addUsuario(req, res) {
     // * Registro. Lo puede hacer cualquiera.
     let usuario = req.body;
-    // TODO Now: permisos por default
     usuario.habilitado=true;
     usuarioDao.create(usuario)
         .then((data) => {
@@ -93,8 +92,8 @@ function updateUsuario(req, res) {
 function findUsuarios(req, res) {
     // ! incluirHabilitado es si incluir que habilitado=true; so true here will bring you solo habilitados, false es todos.
     // TODO Refactor: Cambiar a "soloHabilitados"
-    usuarioDao.findAll({incluirHabilitado:req.query.incluirHabilitado!=undefined}).
-        then((data) => {
+    usuarioDao.findAll({incluirHabilitado:req.query.incluirHabilitado!=undefined})
+        .then((data) => {
             res.send(data);
         })
         .catch((error) => {
@@ -185,7 +184,8 @@ function salir(req, res) {
     res.status(200).send();
 }
 
-// TODO Refactor: En invitasr, eliminarInvitacion, cancelarInvitacion y rechazarInvitacion (y aceptarAmigo y eliminarAmigo (creo)) se usan las IDs, pero siempre tenemos uno de los 2 usuarios. Ver cómo evitar usar 2 veces findByIk
+// TODO Refactor: En invitasr, eliminarInvitacion, cancelarInvitacion y rechazarInvitacion (y aceptarAmigo y eliminarAmigo (creo)) se usan las IDs, pero siempre tenemos uno de los 2 usuarios. Ver cómo evitar usar 2 veces findByIk para el usuario de la sesión
+// TODO Refactor: Las respuestas son iguales y el manejo de errores también
 
 function invitar(req,res){
     usuarioDao.invitar(req.session.usuarioID,req.params.id)
