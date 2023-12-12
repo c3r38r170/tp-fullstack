@@ -521,12 +521,15 @@ export class PanelComponent implements OnInit {
             break;
           case 'contrasenia':
             datoMensaje='Contraseña actualizada.';
+            form.dataset['puedeEnviar']='0';
             break;
           case 'correo':
             this.usuarioActual.correo=valor;
             datoMensaje='Correo actualizado.';
             break;
           }
+
+          form.reset();
 
           form.dataset['sucio']='0';
           form.dataset['enviando']='0';
